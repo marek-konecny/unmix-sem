@@ -1,10 +1,9 @@
 """
-Trinity-Inverse: Adaptive Inverse Rendering and Denoising in Single-View Multi-Detector Scanning Electron Microscopy.
+UnMix-SEM: Uncalibrated Multi-Detector Intrinsics Extraction and Denoising in Single-View Scanning Electron Microscopy
 """
 
 from ._4_model_architecture import (
-    TrinityInverseModel,
-    ProposedModelArchitecture,
+    UnMixSemModel,
     IntrinsicImageDecompositionModule,
     DifferentiableRendererModule,
     EncoderBlock,
@@ -13,8 +12,7 @@ from ._4_model_architecture import (
 )
 
 __all__ = [
-    "TrinityInverseModel",
-    "ProposedModelArchitecture",
+    "UnMixSemModel",
     "IntrinsicImageDecompositionModule",
     "DifferentiableRendererModule",
     "EncoderBlock",

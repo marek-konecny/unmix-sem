@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from _1_constants import PYTORCH_DEVICE, PATCHES_PER_BATCH, PATCH_SIZE_PX, BATCHES_PER_EPOCH, START_LEARNING_RATE, TOTAL_EPOCHS, DEFAULT_EVALUATION_SPECIMEN_NAMES, LOSS_COMPONENT_WEIGHTS_FINETUNING
 from _2_data_loading_helpers import load_intra_sample_registration_data, parse_data_structure
 from _3_dataset_classes import ScanTripletWithFinetuningDataPatchSampler
-from _4_model_architecture import TrinityInverseModel
+from _4_model_architecture import UnMixSemModel
 from _5_loss_helpers import autocorrelation
 
 
@@ -38,7 +38,7 @@ intra_sample_registration_data = load_intra_sample_registration_data(args.intra_
 all_triplets = parse_data_structure(args.input_data_root, None, intra_sample_registration_data)
 if len(all_triplets) == 0: raise ValueError("no triplets found")
 
-model = TrinityInverseModel().to(PYTORCH_DEVICE)
+model = UnMixSemModel().to(PYTORCH_DEVICE)
 
 
 # 2. FINETUNING

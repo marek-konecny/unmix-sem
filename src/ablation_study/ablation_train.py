@@ -32,7 +32,7 @@ from _2_data_loading_helpers import (
     parse_data_structure,
 )
 from _3_dataset_classes import ScanTripletPatchSampler, ScanTripletWithFinetuningDataPatchSampler
-from _4_model_architecture import TrinityInverseModel, ProposedModelArchitecture
+from _4_model_architecture import UnMixSemModel
 from _5_loss_helpers import (
     dirichlet_energy, sphere_normal_loss, uniform_composition_loss,
     inter_channel_correlation, autocorrelation,
@@ -63,7 +63,7 @@ def run_pretrain(config: dict, eval_specimens: list,
     arch_config = config["arch_config"]
     r_high_skip = config["r_high_skip_connection"]
 
-    model = ProposedModelArchitecture(
+    model = UnMixSemModel(
         latent_channels=latent_ch,
         r_high_skip_connection=r_high_skip,
         arch_config=arch_config,
@@ -277,7 +277,7 @@ def run_finetune(config: dict, eval_specimens: list,
     arch_config = config["arch_config"]
     r_high_skip = config["r_high_skip_connection"]
 
-    model = ProposedModelArchitecture(
+    model = UnMixSemModel(
         latent_channels=latent_ch,
         r_high_skip_connection=r_high_skip,
         arch_config=arch_config,
@@ -419,7 +419,7 @@ def glob_ckpt_epochs(out_dir: str):
 def main():
     parser = argparse.ArgumentParser(description="Ablation training orchestrator")
     parser.add_argument('--data_root', type=str, required=True,
-                        help="Root of the experimental dataset (trinity_sem_dataset/)")
+                        help="Root of the experimental dataset (unmix_sem_dataset/)")
     parser.add_argument('--time_limit_hours', type=float, default=47.0,
                         help="Soft time limit in hours")
     args = parser.parse_args()

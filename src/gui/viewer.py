@@ -68,7 +68,7 @@ from tools.utils import load_preinferred_latent_data, inference_from_latents
 
 class InferredComponentsViewerApp(ViewerWindowWithFileTree):
     def __init__(self):
-        super().__init__("Trinity-Inverse Inference Visualizer")
+        super().__init__("UnMix-SEM Inference Visualizer")
 
         self.det_p_vectors = None
         self.det_alpha = None

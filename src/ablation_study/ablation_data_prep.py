@@ -435,7 +435,7 @@ def ensure_evaluation_data(data_root: str, reg_csv: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Prepare / cache all data artefacts for the ablation pipeline.")
-    parser.add_argument('--data_root', type=str, required=True, help="Root of the experimental dataset (trinity_sem_dataset/)")
+    parser.add_argument('--data_root', type=str, required=True, help="Root of the experimental dataset (unmix_sem_dataset/)")
     parser.add_argument('--force', action='store_true', help="Re-create all artefacts even if cached.")
     parser.add_argument('--skip_pgt', action='store_true', help="Skip PGT / noise injection (training-only prep).")
     args = parser.parse_args()

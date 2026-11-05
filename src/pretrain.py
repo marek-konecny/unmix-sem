@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from _1_constants import PYTORCH_DEVICE, PATCHES_PER_BATCH, PATCH_SIZE_PX, BATCHES_PER_EPOCH, START_LEARNING_RATE, TOTAL_EPOCHS, DEFAULT_EVALUATION_SPECIMEN_NAMES, LOSS_COMPONENT_WEIGHTS_PRETRAINING
 from _2_data_loading_helpers import load_spherical_particles_data, parse_data_structure
 from _3_dataset_classes import ScanTripletPatchSampler
-from _4_model_architecture import TrinityInverseModel
+from _4_model_architecture import UnMixSemModel
 from _5_loss_helpers import dirichlet_energy, sphere_normal_loss, uniform_composition_loss, inter_channel_correlation, autocorrelation
 
 
@@ -41,7 +41,7 @@ spherical_particles_data = load_spherical_particles_data(args.spherical_particle
 all_triplets = parse_data_structure(args.input_data_root, spherical_particles_data, None)
 if len(all_triplets) == 0: raise ValueError("no triplets found")
 
-model = TrinityInverseModel().to(PYTORCH_DEVICE)
+model = UnMixSemModel().to(PYTORCH_DEVICE)
 
 
 # 2. PRE-TRAINING

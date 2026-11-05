@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 from _1_constants import TIFF_MAX_INTENSITY_VALUE, PYTORCH_DEVICE, DEFAULT_EVALUATION_SPECIMEN_NAMES
 from _2_data_loading_helpers import parse_data_structure
-from _4_model_architecture import TrinityInverseModel
+from _4_model_architecture import UnMixSemModel
 
 DEFAULT_INFERENCE_CHECKPOINT = os.path.join(
     os.path.dirname(__file__),
@@ -40,7 +40,7 @@ print("Running setup")
 all_triplets = parse_data_structure(args.input_data_root)
 if len(all_triplets) == 0: raise ValueError("no triplets found")
 
-model = TrinityInverseModel().to(PYTORCH_DEVICE)
+model = UnMixSemModel().to(PYTORCH_DEVICE)
 
 
 # 2. INFERENCE

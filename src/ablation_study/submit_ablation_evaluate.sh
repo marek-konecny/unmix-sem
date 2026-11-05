@@ -16,7 +16,7 @@ SINGULARITY_IMAGE="/cvmfs/singularity.metacentrum.cz/NGC/PyTorch:25.02-py3.SIF"
 
 PROJECT_ROOT="$PBS_O_WORKDIR"
 ABLATION_DIR="$PROJECT_ROOT/src/ablation_study"
-DATA_ROOT="$PROJECT_ROOT/trinity_sem_dataset"
+DATA_ROOT="$PROJECT_ROOT/unmix_sem_dataset"
 
 cd "$ABLATION_DIR"
 

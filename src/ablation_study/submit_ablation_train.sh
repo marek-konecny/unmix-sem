@@ -20,7 +20,7 @@ PROJECT_ROOT="$PBS_O_WORKDIR"
 ABLATION_DIR="$PROJECT_ROOT/src/ablation_study"
 
 # Data root relative to project root
-DATA_ROOT="$PROJECT_ROOT/trinity_sem_dataset"
+DATA_ROOT="$PROJECT_ROOT/unmix_sem_dataset"
 
 cd "$ABLATION_DIR"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Trinity-Inverse: Run Cross-Validation Inference for Ablation Model Architectures.
+UnMix-SEM: Run Cross-Validation Inference for Ablation Model Architectures.
 
 This script runs inference using trained ablation weights, automatically mapping
 each evaluation specimen to its corresponding cross-validation fold model.
@@ -26,7 +26,7 @@ from _1_constants import (
     DEFAULT_EVALUATION_SPECIMEN_NAMES,
 )
 from _2_data_loading_helpers import parse_data_structure
-from _4_model_architecture import TrinityInverseModel
+from _4_model_architecture import UnMixSemModel
 from ablation_study.ablation_config import generate_all_configs
 
 ABLATION_CONFIGS = generate_all_configs()
@@ -117,7 +117,7 @@ def infer_single_triplet(model, triplet_info, output_dir, device):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run cross-validation inference for a Trinity-Inverse ablation architecture.",
+        description="Run cross-validation inference for a UnMix-SEM ablation architecture.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -148,8 +148,8 @@ def main():
     parser.add_argument(
         "--input_data_root",
         type=str,
-        default=os.path.join(SRC_DIR, "..", "trinity_sem_dataset"),
-        help="Root path to the Trinity SEM Dataset (default: trinity_sem_dataset).",
+        default=os.path.join(SRC_DIR, "..", "unmix_sem_dataset"),
+        help="Root path to the UnMix-SEM Dataset (default: unmix_sem_dataset).",
     )
     parser.add_argument(
         "--output_dir",
@@ -192,7 +192,7 @@ def main():
 
     device = torch.device(args.device) if args.device else PYTORCH_DEVICE
     print(f"\n=======================================================")
-    print(f" Trinity-Inverse Cross-Validation Inference")
+    print(f" UnMix-SEM Cross-Validation Inference")
     print(f"=======================================================")
     print(f"  Model Codename : {model_id} ({config['arch_type']})")
     print(f"  Phase          : {args.phase}")
@@ -240,7 +240,7 @@ def main():
         print(f"   Loading weights: {os.path.relpath(ckpt_path, os.getcwd())}")
 
         # Instantiate model for this architecture configuration
-        model = TrinityInverseModel(
+        model = UnMixSemModel(
             latent_channels=config["latent_channels"],
             r_high_skip_connection=config["r_high_skip_connection"],
             arch_config=config["arch_config"],
@@ -272,7 +272,7 @@ def main():
             ckpt_path, _ = resolve_checkpoint_path(args.runs_dir, model_id, 1, args.phase)
             if os.path.exists(ckpt_path):
                 print(f"── Auxiliary: Inferring SiAl1 (using Fold 1 weights) ──")
-                model = TrinityInverseModel(
+                model = UnMixSemModel(
                     latent_channels=config["latent_channels"],
                     r_high_skip_connection=config["r_high_skip_connection"],
                     arch_config=config["arch_config"],

@@ -23,7 +23,7 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
 from _1_constants import TIFF_MAX_INTENSITY_VALUE, PYTORCH_DEVICE
-from _4_model_architecture import TrinityInverseModel, ProposedModelArchitecture
+from _4_model_architecture import UnMixSemModel
 from tools.utils import inference_from_latents
 from ablation_config import REGISTRATION_SHIFTS_CSV, eval_dir
 from ablation_state import (
@@ -103,7 +103,7 @@ def run_evaluation(config: dict, eval_specimens: list,
     arch_config = config["arch_config"]
     r_high_skip = config["r_high_skip_connection"]
 
-    model = ProposedModelArchitecture(
+    model = UnMixSemModel(
         latent_channels=latent_ch,
         r_high_skip_connection=r_high_skip,
         arch_config=arch_config,
@@ -246,7 +246,7 @@ def run_evaluation(config: dict, eval_specimens: list,
 def main():
     parser = argparse.ArgumentParser(description="Ablation evaluation orchestrator")
     parser.add_argument('--data_root', type=str, required=True,
-                        help="Root of the experimental dataset (trinity_sem_dataset/)")
+                        help="Root of the experimental dataset (unmix_sem_dataset/)")
     parser.add_argument('--time_limit_hours', type=float, default=11.5,
                         help="Soft time limit in hours")
     args = parser.parse_args()

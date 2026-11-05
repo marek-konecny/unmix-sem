@@ -224,7 +224,7 @@ class DifferentiableRendererModule(nn.Module):
         return f_img, r_high, g
 
 
-class TrinityInverseModel(nn.Module):
+class UnMixSemModel(nn.Module):
     def __init__(self, latent_channels: int = 96, r_high_skip_connection: bool = True, arch_config: dict = None) -> None:
         super().__init__()
         if arch_config is None:
@@ -259,7 +259,3 @@ class TrinityInverseModel(nn.Module):
         f_img, r_high, g = self.dr_module(x, c, n, r_low, eta)
         nx, ny, nz = n[:, 0:1], n[:, 1:2], n[:, 2:3]
         return f_img, c, nx, ny, nz, r_low, r_high, eta, g
-
-
-# Alias for backward compatibility
-ProposedModelArchitecture = TrinityInverseModel

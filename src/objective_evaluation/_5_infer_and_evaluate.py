@@ -13,7 +13,7 @@ from skimage.metrics import structural_similarity as ssim
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from _1_constants import TIFF_MAX_INTENSITY_VALUE, PYTORCH_DEVICE
-from _4_model_architecture import TrinityInverseModel
+from _4_model_architecture import UnMixSemModel
 from tools.utils import inference_from_latents
 
 # 0. CONFIG
@@ -35,7 +35,7 @@ os.makedirs(args.output_dir, exist_ok=True)
 images_output_dir = os.path.join(args.output_dir, "images")
 os.makedirs(images_output_dir, exist_ok=True)
 
-model = TrinityInverseModel().to(PYTORCH_DEVICE)
+model = UnMixSemModel().to(PYTORCH_DEVICE)
 
 old_state = torch.load(args.inference_checkpoint_path, map_location=PYTORCH_DEVICE)
 new_state = {}

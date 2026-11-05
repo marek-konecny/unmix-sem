@@ -8,6 +8,7 @@ env/
 .venv/
 venv/
 ENV/
+node_modules/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
@@ -37,5 +38,5 @@ latest_model*.pth
 **/inferred_latents/**/*.json
 
 # Un-ignore dataset TIFFs
-!trinity_sem_dataset/**/*.tiff
+!unmix_sem_dataset/**/*.tiff
 
