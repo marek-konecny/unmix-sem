@@ -1,0 +1,68 @@
+services:
+  caddy:
+    image: caddy:latest
+    container_name: "${COMPOSE_PROJECT_NAME}-caddy"
+    restart: unless-stopped
+    ports:
+      - "${TRIALS_APP_HTTP_PORT}:80"
+      - "${TRIALS_APP_HTTPS_PORT}:443"
+      - "${ADMINER_PORT}:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - global-proxy-net
+
+  trials-app-db:
+    image: mariadb:10.11
+    container_name: "${COMPOSE_PROJECT_NAME}-trials-app-db"
+    environment:
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    volumes:
+      - ./src/database_init.sql:/docker-entrypoint-initdb.d/1_init.sql:ro
+      - trials_app_db_data:/var/lib/mysql
+    networks:
+      - global-proxy-net
+
+  trials-app:
+    build:
+      context: ./src
+    container_name: "${COMPOSE_PROJECT_NAME}-trials-app"
+    environment:
+      DB_HOST: "${DB_HOST}"
+      DB_NAME: "${MYSQL_DATABASE}"
+      DB_USER: "${MYSQL_USER}"
+      DB_PASS: "${MYSQL_PASSWORD}"
+    expose:
+      - "80"
+    volumes:
+      - ./src/images:/var/www/html/images:ro
+    depends_on:
+      - trials-app-db
+    networks:
+      - global-proxy-net
+
+  adminer:
+    image: adminer:latest
+    container_name: "${COMPOSE_PROJECT_NAME}-adminer"
+    restart: unless-stopped
+    depends_on:
+      - trials-app-db
+    networks:
+      - global-proxy-net
+
+networks:
+  movie-database-app-bridge:
+    driver: bridge
+  global-proxy-net:
+    name: global-proxy-net
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  trials_app_db_data:

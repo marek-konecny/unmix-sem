@@ -1,0 +1,11 @@
+:80 {
+    reverse_proxy trials-app:80 {
+        header_up X-Forwarded-Proto https
+    }
+    encode gzip zstd
+}
+
+:8080 {
+    reverse_proxy adminer:8080
+    encode gzip zstd
+}

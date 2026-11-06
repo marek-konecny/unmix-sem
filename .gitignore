@@ -23,6 +23,7 @@ node_modules/
 *.swo
 .vscode/
 .idea/
+.env
 
 # Intermediate checkpoints (keep best_model*.pth via Git LFS)
 checkpoint_epoch_*.pth
@@ -39,4 +40,3 @@ latest_model*.pth
 
 # Un-ignore dataset TIFFs
 !unmix_sem_dataset/**/*.tiff
-

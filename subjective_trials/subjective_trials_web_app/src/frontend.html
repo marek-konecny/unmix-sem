@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="cs" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjective trial</title>
+    <link rel="shortcut icon" href="https://www.vut.cz/i/images/favicon_ostra.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <style>
+        .screen { display: none; opacity: 0; transition: opacity 0.2s ease; min-height: 100vh; }
+        .screen.active { display: flex; flex-direction: column; }
+        .screen.show { opacity: 1; }
+        .flag-icon { width: 80px; height: 60px; object-fit: cover; cursor: pointer; box-shadow: 0 0 0 0 white; transition: box-shadow 0.2s ease; filter: sepia(0.3); user-select: none; -webkit-user-drag: none; -webkit-touch-callout: none; touch-action: manipulation; }
+        .flag-icon:hover { box-shadow: 0 0 0 2px white; }
+        .form-floating > label { z-index: 6; } 
+        .img-thumbnail-custom { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
+        .rank-item { transition: transform 0.2s; }
+        .scene-container { border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .choice-img { cursor: pointer; box-shadow: 0 0 0 0 white; transition: box-shadow 0.2s ease, transform 0.1s ease; user-select: none; -webkit-user-drag: none; -webkit-touch-callout: none; touch-action: manipulation; }
+        .choice-img:hover, .choice-img.key-hover { box-shadow: 0 0 0 4px white; }
+        #loading-progress { background-color: #ffffff; background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.15) 25%, transparent 25%, transparent 50%, rgba(0, 0, 0, 0.15) 50%, rgba(0, 0, 0, 0.15) 75%, transparent 75%, transparent); }
+        #loading-heading { transition: opacity 0.5s ease; }
+        
+        .pair-container { min-height: 100vh; gap: 1.5rem; }
+        .tutorial-container { padding: 7rem 2rem 3rem 2rem; }
+        .ranking-container { padding: 4rem 2rem 3rem 2rem; }
+        .pair-img { max-width: calc(50% - 0.75rem); max-height: calc(100vh - 10rem); }
+
+        @media (max-width: 768px) {
+            .pair-container { flex-direction: column !important; padding: 5rem 1rem 2rem 1rem !important; }
+            .pair-img { max-width: 100% !important; max-height: calc(50vh - 4rem) !important; width: auto; height: auto; }
+        }
+        .mobile-device .choice-img:hover, .mobile-device .choice-img.key-hover { box-shadow: 0 0 0 0 white !important; }
+        .mobile-device .choice-img:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-body">
+
+    <noscript>
+        <div class="position-fixed top-0 start-0 w-100 h-100 bg-body d-flex justify-content-center align-items-center" style="z-index: 9999;">
+            <div class="alert alert-danger text-center p-5">
+                <h1 class="text-danger mb-4">Javascript required</h1>
+                <h1 class="text-danger m-0">Povolte Javascript</h1>
+            </div>
+        </div>
+    </noscript>
+
+    <div id="screen-key" class="screen justify-content-center align-items-center">
+        <div class="p-5 mb-5 bg-body-tertiary shadow rounded" style="max-width: 400px; width: 100%;">
+            <div class="d-flex justify-content-evenly gap-4 mb-5">
+                <img src="https://raw.githubusercontent.com/lipis/flag-icons/main/flags/4x3/cz.svg" alt="Čeština" class="flag-icon" onclick="setLanguage('cs')">
+                <img src="https://raw.githubusercontent.com/lipis/flag-icons/main/flags/4x3/gb.svg" alt="English" class="flag-icon" onclick="setLanguage('en')">
+            </div>
+            <div id="key-error" class="alert alert-danger d-none" role="alert" data-i18n="err_key">Neplatný klíč.</div>
+            <div class="form-floating input-group mb-3">
+                <input class="form-control rounded" id="api-key-input" autocomplete="off" placeholder="key">
+                <label for="api-key-input" data-i18n="enter_your_access_key">Zadejte vstupní klíč</label>
+            </div>
+            <button id="btn-continue" class="btn btn-primary btn-lg w-100" onclick="handleKeySubmit()" data-i18n="btn_continue_to_tutorial">Pokračovat do nácviku →</button>
+        </div>
+    </div>
+
+    <div id="tutorial-text-container" class="d-none w-100" style="position: fixed; top: 2rem; left: 0; z-index: 1000; pointer-events: none; text-align: center; padding: 0 2rem;">
+        <h2 class="text-white text-uppercase mb-2 fw-lighter" data-i18n="tutorial">Nácvik</h2>
+        <h4 id="tutorial-text-display" class="text-white mb-0"></h4>
+    </div>
+    
+    <div id="ranking-text-container" class="d-none w-100" style="position: fixed; top: 2rem; left: 0; z-index: 1000; pointer-events: none; text-align: center; padding: 0 2rem;">
+        <h5 id="ranking-subtitle" class="text-white-50 fw-light mb-0"></h5>
+    </div>
+
+    <div id="screen-tutorial-1" class="screen">
+        <div class="d-flex w-100 h-100 justify-content-center align-items-center pair-container tutorial-container">
+            <img id="tut-img-left-1" class="choice-img pair-img rounded" src="" onclick="handleTutorialInput('left', 'mouse')" draggable="false">
+            <img id="tut-img-right-1" class="choice-img pair-img rounded" src="" onclick="handleTutorialInput('right', 'mouse')" draggable="false">
+        </div>
+    </div>
+
+    <div id="screen-tutorial-2" class="screen">
+        <div class="d-flex w-100 h-100 justify-content-center align-items-center pair-container tutorial-container">
+            <img id="tut-img-left-2" class="choice-img pair-img rounded" src="" onclick="handleTutorialInput('left', 'mouse')" draggable="false">
+            <img id="tut-img-right-2" class="choice-img pair-img rounded" src="" onclick="handleTutorialInput('right', 'mouse')" draggable="false">
+        </div>
+    </div>
+
+    <div id="screen-instructions" class="screen justify-content-center align-items-center bg-body">
+        <div class="p-5 mb-5 bg-body-tertiary shadow rounded" style="max-width: 850px; width: 100%;">
+            <h2 class="mb-4 fw-lighter" data-i18n="inst_title">Instructions</h2>
+            <p class="fs-5 mb-3">
+                <span data-i18n="instructions_par1">In the next phase, you will compare pairs of images.</span> <span id="dynamic-instruction"></span>
+            </p>
+            <p class="fs-5 mb-3 text-warning" data-i18n="instructions_vision">If you have prescribed glasses or contact lenses, please make sure you are wearing them during the trial.</p>
+            <p class="fs-5 mb-5" data-i18n="instructions_par3">Take your time. There is no time limit.</p>
+            <button class="btn btn-primary btn-lg w-100 shadow" onclick="proceedToReadyScreen()" data-i18n="btn_understood">I understand →</button>
+        </div>
+    </div>
+
+    <div id="screen-ready" class="screen justify-content-center align-items-center bg-body">
+        <div class="text-center w-100" style="max-width: 600px; padding: 0 20px;">
+            <h3 class="mb-2 fw-lighter" data-i18n="loading" id="loading-heading">Načítání rozhraní...</h3>
+            <div class="progress mb-5" style="height: 30px;">
+                <div id="loading-progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;"></div>
+            </div>
+            <button id="btn-ready" class="btn btn-lg btn-primary shadow mb-5" onclick="handleUserReady()" data-i18n="btn_ready" disabled>I am ready, start the trial →</button>
+        </div>
+    </div>
+
+    <div id="screen-ranking-1" class="screen">
+        <div class="d-flex w-100 h-100 justify-content-center align-items-center pair-container ranking-container">
+            <img id="img-left-1" class="choice-img pair-img rounded" src="" onclick="processUserRankingSelection('left')" draggable="false">
+            <img id="img-right-1" class="choice-img pair-img rounded" src="" onclick="processUserRankingSelection('right')" draggable="false">
+        </div>
+    </div>
+
+    <div id="screen-ranking-2" class="screen">
+        <div class="d-flex w-100 h-100 justify-content-center align-items-center pair-container ranking-container">
+            <img id="img-left-2" class="choice-img pair-img rounded" src="" onclick="processUserRankingSelection('left')" draggable="false">
+            <img id="img-right-2" class="choice-img pair-img rounded" src="" onclick="processUserRankingSelection('right')" draggable="false">
+        </div>
+    </div>
+
+    <div id="ranking-progress-container" class="d-none" style="position: fixed; bottom: 2rem; left: 2rem; right: 2rem; height: 2px; background-color: rgba(255,255,255,0.1); z-index: 1000;">
+        <div id="ranking-progress-bar" class="rounded-pill" style="width: 0%; height: 100%; background-color: white; transition: width 0.3s ease;"></div>
+    </div>
+    
+    <div id="screen-questionnaire" class="screen justify-content-center align-items-center">
+        <div class="p-3 my-2 bg-body-tertiary shadow rounded" style="max-width: 650px; width: 100%;">
+            <h2 class="fw-lighter text-center" data-i18n="quest_title">Post-trial Questionnaire</h2>
+
+            <div id="quest-error" class="alert alert-danger d-none text-center mb-4" data-i18n="err_mandatory">Please answer all mandatory questions (*).</div>
+            
+            <div class="mb-3 mt-4 mt-xl-5">
+                <label class="form-label d-block text-center mb-3"><span data-i18n="quest_clear">How clear were the instructions?</span><span class="text-danger ps-1">*</span></label>
+                <div class="d-flex justify-content-center align-items-center gap-3">
+                    <span class="small text-muted text-end" style="width: 95px;" data-i18n="scale_clear_min">Bad</span>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="quest_clear" id="qc1" value="1" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qc1">1</label>
+                        <input type="radio" class="btn-check" name="quest_clear" id="qc2" value="2" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qc2">2</label>
+                        <input type="radio" class="btn-check" name="quest_clear" id="qc3" value="3" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qc3">3</label>
+                        <input type="radio" class="btn-check" name="quest_clear" id="qc4" value="4" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qc4">4</label>
+                        <input type="radio" class="btn-check" name="quest_clear" id="qc5" value="5" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qc5">5</label>
+                    </div>
+                    <span class="small text-muted text-start" style="width: 95px;" data-i18n="scale_clear_max">Excellent</span>
+                </div>
+            </div>
+
+            <div class="mb-3 mb-xl-5">
+                <label class="form-label d-block text-center mb-3"><span data-i18n="quest_diff">How difficult was it to decide between the images?</span><span class="text-danger ps-1">*</span></label>
+                <div class="d-flex justify-content-center align-items-center gap-3">
+                    <span class="small text-muted text-end" style="width: 95px;" data-i18n="scale_diff_min">Easy</span>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="quest_diff" id="qd1" value="1" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qd1">1</label>
+                        <input type="radio" class="btn-check" name="quest_diff" id="qd2" value="2" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qd2">2</label>
+                        <input type="radio" class="btn-check" name="quest_diff" id="qd3" value="3" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qd3">3</label>
+                        <input type="radio" class="btn-check" name="quest_diff" id="qd4" value="4" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qd4">4</label>
+                        <input type="radio" class="btn-check" name="quest_diff" id="qd5" value="5" autocomplete="off">
+                        <label class="btn btn-outline-secondary px-3" for="qd5">5</label>
+                    </div>
+                    <span class="small text-muted text-start" style="width: 95px;" data-i18n="scale_diff_max">Hard</span>
+                </div>
+            </div>
+
+            <div class="mb-3 d-flex align-items-center justify-content-between">
+                <label class="form-label mb-0"><span data-i18n="quest_sight_impairment">Do you have any visual impairments?</span><span class="text-danger ps-1">*</span></label>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="quest_sight_impairment" id="qdef1" value="1" autocomplete="off">
+                    <label class="btn btn-outline-secondary px-4" for="qdef1" data-i18n="lbl_yes">Yes</label>
+                    <input type="radio" class="btn-check" name="quest_sight_impairment" id="qdef0" value="0" autocomplete="off">
+                    <label class="btn btn-outline-secondary px-4" for="qdef0" data-i18n="lbl_no">No</label>
+                </div>
+            </div>
+
+            <div class="mb-3 d-flex align-items-center justify-content-between">
+                <label class="form-label mb-0"><span data-i18n="quest_em">Do you have experience with electron microscopy?</span><span class="text-danger ps-1">*</span></label>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="quest_em" id="qem1" value="1" autocomplete="off">
+                    <label class="btn btn-outline-secondary px-4" for="qem1" data-i18n="lbl_yes">Yes</label>
+                    <input type="radio" class="btn-check" name="quest_em" id="qem0" value="0" autocomplete="off">
+                    <label class="btn btn-outline-secondary px-4" for="qem0" data-i18n="lbl_no">No</label>
+                </div>
+            </div>
+
+            <div class="mb-3 mb-xl-5 d-flex align-items-center justify-content-between">
+                <label class="form-label mb-0"><span data-i18n="quest_ip">Do you have experience with image processing?</span><span class="text-danger ps-1">*</span></label>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="quest_ip" id="qip1" value="1" autocomplete="off">
+                    <label class="btn btn-outline-secondary px-4" for="qip1" data-i18n="lbl_yes">Yes</label>
+                    <input type="radio" class="btn-check" name="quest_ip" id="qip0" value="0" autocomplete="off">
+                    <label class="btn btn-outline-secondary px-4" for="qip0" data-i18n="lbl_no">No</label>
+                </div>
+            </div>
+
+            <div class="form-floating mb-3">
+                <textarea class="form-control" placeholder="Criteria" id="quest-crit" style="height: 100px"></textarea>
+                <label for="quest-crit" data-i18n="quest_crit">What specific criteria did you focus on during image selection? <span class=\"text-muted\">(optional)</span></label>
+            </div>
+
+            <div class="form-floating mb-3 mb-xl-5">
+                <textarea class="form-control" placeholder="Notes" id="quest-notes" style="height: 100px"></textarea>
+                <label for="quest-notes" data-i18n="quest_notes">Other impressions and notes for author <span class=\"text-muted\">(optional)</span></label>
+            </div>
+
+            <button id="btn-submit-rankings" class="btn btn-primary btn-lg w-100 shadow" onclick="submitDataAndQuestionnaire()" data-i18n="btn_submit_rankings">Submit my rankings →</button>
+        </div>
+    </div>
+
+    <div id="screen-done" class="screen justify-content-center align-items-center">
+        <div class="text-center p-4">
+            <h1 class="text-white fw-normal" data-i18n="done_msg">Thank you for completing the the trial. You may close the tab now.</h1>
+        </div>
+    </div>
+
+    <script>
+        const isMobileUser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobileUser)
+            document.body.classList.add('mobile-device');
+
+        const appStartTime = Date.now();
+        let shouldWarnOnUnload = false;
+        let trialStartTime = null;
+        let timeTrialUnfocused = 0;
+        let lastVisibilityChangeTimestamp = null;
+
+        const API_BASE = '/api';
+        let currentLang = localStorage.getItem('preferred_language') || (['cs', 'en'].includes(navigator.language.slice(0, 2)) ? navigator.language.slice(0, 2) : 'cs');
+        let currentApiKey = '';
+        let currentVariant = 1;
+        let preloadedSceneImages = {}; 
+        let screenTransitionTimeout;
+        
+        let activePairwiseTrials = [];
+        let currentTrialIndex = 0;
+        let activeImagePairComparison = null;
+        let visibleRankingScreenIndex = 1;
+        
+        let isUserInputTemporarilyDisabled = false;
+        let mostRecentlyPressedDirectionalKey = null;
+        let currentlyHeldKeyboardKeys = { ArrowLeft: false, ArrowRight: false };
+
+        let haveAllImagesFinishedDownloading = false;
+        let hasUserCompletedTutorial = false;
+        let tutorialStep = 1; 
+        let visibleTutorialScreenIndex = 1;
+        const TOTAL_TUTORIAL_STEPS = 7;
+
+        let totalPairsAcrossAllScenes = 0;
+        let completedPairs = 0;
+
+        const translations = {
+            en: {
+                enter_your_access_key: "Enter your access key",
+                btn_continue_to_tutorial: "Continue to tutorial →",
+                err_key: "Invalid key provided.",
+                err_network: "Network error occurred.",
+                err_mobile: "Please use desktop or laptop for this experiment.",
+                loading: "Loading interface...",
+                submit_fail: "Failed to submit rankings.",
+                scene: "Scene",
+                done_msg: "Thank you for completing the the trial. You may close the tab now.",
+                tutorial: "Tutorial",
+                tut_mouse: "Click the image you prefer using your mouse🖱️.",
+                tut_keys: "Now, use the left or right arrow key ⬅️ ➡️ to select.",
+                tut_tap: "Tap to select image 👆.",
+                tut_finish: "Train image selection on the remaining examples.",
+                btn_ready: "I am ready, start the trial →",
+                inst_title: "Instructions",
+                instructions_par1: "In the trial, you will compare pairs of images.",
+                instructions_par2_var1: "Please select the image that is <span class=\"fw-bold\">visually of higher quality</span>.",
+                instructions_par2_var2: "Please select the image that you would <span class=\"fw-bold\">prefer for further sample analysis</span>.",
+                instructions_vision: "If you have prescribed glasses or contact lenses, please make sure you are wearing them during the trial.",
+                instructions_par3: "Take your time. There is no time limit.",
+                btn_understood: "I understand →",
+                quest_title: "Post-trial Questionnaire",
+                quest_clear: "How clear were the instructions?",
+                scale_clear_min: "Very unclear",
+                scale_clear_max: "Perfectly clear",
+                quest_diff: "How difficult was it to decide between the images?",
+                scale_diff_min: "Very easy",
+                scale_diff_max: "Very difficult",
+                quest_sight_impairment: "Do you have any visual impairments?",
+                quest_em: "Do you have experience with electron microscopy?",
+                quest_ip: "Do you have experience with image processing?",
+                lbl_yes: "Yes",
+                lbl_no: "No",
+                err_mandatory: "Please answer all mandatory questions (*).",
+                quest_crit: "What specific criteria did you focus on during image selection? <span class=\"text-muted\">(optional)</span>",
+                quest_notes: "Other impressions and notes for author <span class=\"text-muted\">(optional)</span>",
+                btn_submit_rankings: "Submit my rankings →"
+            },
+            cs: {
+                enter_your_access_key: "Zadejte vstupní klíč",
+                btn_continue_to_tutorial: "Pokračovat do nácviku →",
+                err_key: "Byl zadán neplatný klíč.",
+                err_network: "Došlo k chybě sítě.",
+                err_mobile: "Pro tento experiment použijte stolní počítač nebo notebook.",
+                loading: "Načítání rozhraní...",
+                submit_fail: "Uložení výsledků selhalo.",
+                scene: "Scéna",
+                done_msg: "Děkuji za dokončení experimentu. Nyní můžete záložku zavřít.",
+                tutorial: "Nácvik",
+                tut_mouse: "Kliknutím myši🖱️ vyberte snímek, který preferujete.",
+                tut_keys: "Nyní pro volbu stiskněte šipku vlevo nebo vpravo ⬅️ ➡️.",
+                tut_tap: "Klepnutím 👆 vyberte snímek.",
+                tut_finish: "Na zbylých příkladech si procvičte výběr snímku.",
+                btn_ready: "Jsem připraven/a, spustit experiment →",
+                inst_title: "Instrukce",
+                instructions_par1: "V experimentu budete porovnávat dvojice snímků.",
+                instructions_par2_var1: "Vybírejte prosím snímek, který je <span class=\"fw-bold\">vizuálně kvalitnější</span>.",
+                instructions_par2_var2: "Vybírejte prosím snímek, který byste <span class=\"fw-bold\">použil/a k podrobnější analýze vzorku</span>.",
+                instructions_vision: "Pokud máte předepsané brýle nebo kontaktní čočky, ujistěte se prosím, že je máte během experimentu nasazené.",
+                instructions_par3: "Nespěchejte. Nemáte žádný časový limit.",
+                btn_understood: "Rozumím →",
+                quest_title: "Závěrečný dotazník",
+                quest_clear: "Jak srozumitelné byly instrukce?",
+                scale_clear_min: "Velmi nesrozumitelné",
+                scale_clear_max: "Perfektně srozumitelné",
+                quest_diff: "Jak obtížné bylo rozhodování?",
+                scale_diff_min: "Velmi snadné",
+                scale_diff_max: "Velmi obtížné",
+                quest_sight_impairment: "Máte nějakou vadu zraku?",
+                quest_em: "Máte zkušenosti s elektronovou mikroskopií?",
+                quest_ip: "Máte zkušenosti se zpracováním obrazu?",
+                lbl_yes: "Ano",
+                lbl_no: "Ne",
+                err_mandatory: "Prosím, odpovězte na všechny povinné otázky (*).",
+                quest_crit: "Na jaká konkrétní kritéria jste se při výběru zaměřil/a? <span class=\"text-muted\">(volitelné)</span>",
+                quest_notes: "Ostatní dojmy a poznámky pro autora <span class=\"text-muted\">(volitelné)</span>",
+                btn_submit_rankings: "Odeslat výsledky →"
+            }
+        };
+
+        async function fetchWithRetry(url, options = {}, retries = 10, delay = 1000) {
+            let attempt = 0;
+            while (attempt < retries) {
+                try {
+                    return await fetch(url, options);
+                } catch (error) {
+                    attempt++;
+                    if (attempt >= retries) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        function getText(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const translationKey = el.getAttribute('data-i18n');
+                if (translations[currentLang][translationKey])
+                    el.innerHTML = translations[currentLang][translationKey];
+            });
+            
+            const variantInstructionHtml = currentVariant === 1 ? getText('instructions_par2_var1') : getText('instructions_par2_var2');
+            if (document.getElementById('dynamic-instruction'))
+                document.getElementById('dynamic-instruction').innerHTML = variantInstructionHtml;
+            if (document.getElementById('ranking-subtitle'))
+                document.getElementById('ranking-subtitle').innerHTML = variantInstructionHtml;
+        }
+
+        function showScreen(targetScreenId) {
+            const currentlyVisibleScreen = document.querySelector('.screen.active');
+            const targetScreenElement = document.getElementById(targetScreenId);
+            
+            if (currentlyVisibleScreen === targetScreenElement) return;
+
+            if (targetScreenId.startsWith('screen-tutorial'))
+                document.getElementById('tutorial-text-container').classList.remove('d-none');
+            else
+                document.getElementById('tutorial-text-container').classList.add('d-none');
+                
+            if (targetScreenId.startsWith('screen-ranking'))
+                document.getElementById('ranking-text-container').classList.remove('d-none');
+            else
+                document.getElementById('ranking-text-container').classList.add('d-none');
+
+            if (targetScreenId.startsWith('screen-ranking') || targetScreenId.startsWith('screen-tutorial'))
+                document.getElementById('ranking-progress-container').classList.remove('d-none');
+            else
+                document.getElementById('ranking-progress-container').classList.add('d-none');
+
+            clearTimeout(screenTransitionTimeout);
+
+            if (currentlyVisibleScreen) {
+                currentlyVisibleScreen.classList.remove('show');
+                screenTransitionTimeout = setTimeout(() => {
+                    document.querySelectorAll('.screen').forEach(screen => {
+                        screen.classList.remove('active', 'show');
+                    });
+                    targetScreenElement.classList.add('active');
+                    void targetScreenElement.offsetWidth;
+                    targetScreenElement.classList.add('show');
+                    isUserInputTemporarilyDisabled = false;
+                }, 200);
+            } else {
+                targetScreenElement.classList.add('active');
+                void targetScreenElement.offsetWidth;
+                targetScreenElement.classList.add('show');
+                isUserInputTemporarilyDisabled = false;
+            }
+        }
+
+        function setLanguage(selectedLanguage) {
+            currentLang = selectedLanguage;
+            localStorage.setItem('preferred_language', currentLang);
+            document.documentElement.lang = currentLang;
+            applyTranslations();
+        }
+
+        function handleKeySubmit() {
+            const submittedKey = document.getElementById('api-key-input').value.trim();
+            if (!submittedKey) return;
+            document.getElementById('key-error').classList.add('d-none');
+            
+            document.getElementById('btn-continue').disabled = true;
+            validateApiKeyAndBeginImageDownload(submittedKey);
+        }
+
+        async function validateApiKeyAndBeginImageDownload(apiKey) {
+            try {
+                const initResponse = await fetchWithRetry(`${API_BASE}/init?key=${apiKey}`);
+                const initData = await initResponse.json();
+                
+                if (initResponse.status === 401 || initData.status !== 'success')
+                    throw new Error('invalid_key');
+                    
+                if (isMobileUser && initData.mobileAllowed === false)
+                    throw new Error('mobile_not_allowed');
+
+                currentApiKey = apiKey;
+                currentVariant = initData.variant;
+                applyTranslations();
+                
+                shouldWarnOnUnload = true;
+                downloadAllSceneImagesAsynchronously(apiKey, initData.images);
+                startTutorial();
+
+            } catch (requestError) {
+                currentApiKey = '';
+                document.getElementById('api-key-input').value = '';
+                
+                if (requestError.message === 'mobile_not_allowed') {
+                    document.getElementById('key-error').textContent = getText('err_mobile');
+                } else {
+                    document.getElementById('key-error').textContent = requestError.message === 'invalid_key' ? getText('err_key') : getText('err_network');
+                }
+                
+                document.getElementById('key-error').classList.remove('d-none');
+                
+                document.getElementById('btn-continue').disabled = false;
+                showScreen('screen-key');
+            }
+        }
+
+        async function downloadAllSceneImagesAsynchronously(apiKey, imagesToDownload) {
+            haveAllImagesFinishedDownloading = false;
+            let successfullyDownloadedImageCount = 0;
+            const loadingProgressBarElement = document.getElementById('loading-progress');
+            loadingProgressBarElement.style.width = '0%';
+            preloadedSceneImages = {};
+
+            const downloadPromises = imagesToDownload.map(async (imageMetadata) => {
+                const imageResponse = await fetchWithRetry(`${API_BASE}/image/${imageMetadata.scene_id}/${imageMetadata.id}?key=${apiKey}`);
+                const imageDataPayload = await imageResponse.json();
+
+                if (imageDataPayload.status === 'success') {
+                    if (!preloadedSceneImages[imageMetadata.scene_id]) preloadedSceneImages[imageMetadata.scene_id] = [];
+                    preloadedSceneImages[imageMetadata.scene_id].push({ id: imageMetadata.id, data: imageDataPayload.data });
+                }
+
+                successfullyDownloadedImageCount++;
+                const downloadProgressPercentage = Math.round((successfullyDownloadedImageCount / imagesToDownload.length) * 100);
+                loadingProgressBarElement.style.width = downloadProgressPercentage + '%';
+            });
+
+            await Promise.all(downloadPromises);
+
+            haveAllImagesFinishedDownloading = true;
+            document.getElementById('btn-ready').disabled = false;
+            document.getElementById('loading-heading').style.opacity = '0.0';
+            document.getElementById('loading-progress').classList.remove('progress-bar-animated');
+        }
+
+        function generateRandomPlaceholderImageUrl() {
+            let generatedUrl = `https://picsum.photos/999/666?grayscale`;
+            const randomBlurAmount = Math.floor(Math.random() * 5);
+            if (randomBlurAmount > 0) generatedUrl += `&blur=${randomBlurAmount}`;
+            return generatedUrl;
+        }
+
+        function startTutorial() {
+            hasUserCompletedTutorial = false;
+            tutorialStep = 1;
+            visibleTutorialScreenIndex = 1;
+            
+            document.getElementById('ranking-progress-bar').style.width = '0%';
+            document.getElementById('tut-img-left-1').src = generateRandomPlaceholderImageUrl();
+            document.getElementById('tut-img-right-1').src = generateRandomPlaceholderImageUrl();
+            
+            if (isMobileUser)
+                document.getElementById('tutorial-text-display').textContent = getText('tut_tap');
+            else
+                document.getElementById('tutorial-text-display').textContent = getText('tut_mouse');
+            
+            showScreen('screen-tutorial-1');
+        }
+
+        function handleTutorialInput(selectedSide, inputDeviceType) {
+            if (isUserInputTemporarilyDisabled) return;
+            
+            if (!isMobileUser) {
+                if (tutorialStep === 1 && inputDeviceType !== 'mouse') return;
+                if (tutorialStep === 2 && inputDeviceType !== 'keyboard') return;
+            }
+
+            isUserInputTemporarilyDisabled = true;
+
+            mostRecentlyPressedDirectionalKey = null;
+            currentlyHeldKeyboardKeys.ArrowLeft = false;
+            currentlyHeldKeyboardKeys.ArrowRight = false;
+            applyKeyboardHoverStylingToImages();
+
+            let tutorialCompletionPercentage = (tutorialStep / TOTAL_TUTORIAL_STEPS) * 100;
+            document.getElementById('ranking-progress-bar').style.width = `${tutorialCompletionPercentage}%`;
+
+            if (tutorialStep >= TOTAL_TUTORIAL_STEPS) {
+                hasUserCompletedTutorial = true;
+                setTimeout(() => {
+                    showScreen('screen-instructions');
+                }, 200);
+                return;
+            }
+
+            tutorialStep++;
+            visibleTutorialScreenIndex = visibleTutorialScreenIndex === 1 ? 2 : 1;
+            
+            document.getElementById(`tut-img-left-${visibleTutorialScreenIndex}`).src = generateRandomPlaceholderImageUrl();
+            document.getElementById(`tut-img-right-${visibleTutorialScreenIndex}`).src = generateRandomPlaceholderImageUrl();
+
+            if (isMobileUser) {
+                if (tutorialStep >= 2) document.getElementById('tutorial-text-display').textContent = getText('tut_finish');
+                else document.getElementById('tutorial-text-display').textContent = getText('tut_tap');
+            } else {
+                if (tutorialStep === 2) document.getElementById('tutorial-text-display').textContent = getText('tut_keys');
+                else if (tutorialStep >= 3) document.getElementById('tutorial-text-display').textContent = getText('tut_finish');
+                else document.getElementById('tutorial-text-display').textContent = getText('tut_mouse');
+            }
+            
+            showScreen(`screen-tutorial-${visibleTutorialScreenIndex}`);
+        }
+
+        function proceedToReadyScreen() {
+            showScreen('screen-ready');
+        }
+
+        function handleUserReady() {
+            if (haveAllImagesFinishedDownloading)
+                initializePairwiseTrial();
+        }
+
+        function updateOverallProgressVisuals() {
+            let completionPercentage = 0;
+            if (totalPairsAcrossAllScenes > 0)
+                completionPercentage = (completedPairs / totalPairsAcrossAllScenes) * 100;
+            document.getElementById('ranking-progress-bar').style.width = `${completionPercentage}%`;
+        }
+
+        function initializePairwiseTrial() {
+            trialStartTime = Date.now();
+            timeTrialUnfocused = 0;
+            lastVisibilityChangeTimestamp = null;
+            
+            activePairwiseTrials = [];
+            totalPairsAcrossAllScenes = 0;
+            completedPairs = 0;
+
+            Object.entries(preloadedSceneImages).forEach(([sceneIdentifier, sceneImages]) => {
+                if (sceneImages.length < 2) return;
+                
+                let pendingPairs = [];
+                let frequencyMatrix = {};
+
+                sceneImages.forEach(img1 => {
+                    frequencyMatrix[img1.id] = {};
+                    sceneImages.forEach(img2 => {
+                        if (img1.id !== img2.id) frequencyMatrix[img1.id][img2.id] = 0;
+                    });
+                });
+                
+                for (let i = 0; i < sceneImages.length; i++) {
+                    for (let j = i + 1; j < sceneImages.length; j++) {
+                        pendingPairs.push([sceneImages[i], sceneImages[j]]);
+                    }
+                }
+
+                pendingPairs.sort(() => Math.random() - 0.5);
+                totalPairsAcrossAllScenes += pendingPairs.length;
+                
+                activePairwiseTrials.push({
+                    scene_id: sceneIdentifier,
+                    pending_pairs: pendingPairs,
+                    frequency_matrix: frequencyMatrix
+                });
+            });
+
+            updateOverallProgressVisuals();
+            currentTrialIndex = 0;
+            visibleRankingScreenIndex = 1; 
+            prepareNextImagePairComparison();
+        }
+
+        function prepareNextImagePairComparison() {
+            let startingTrialIndex = currentTrialIndex;
+            let foundPendingPair = false;
+
+            do {
+                let trialState = activePairwiseTrials[currentTrialIndex];
+                
+                if (trialState.pending_pairs.length > 0) {
+                    foundPendingPair = true;
+                    break;
+                }
+
+                currentTrialIndex = (currentTrialIndex + 1) % activePairwiseTrials.length;
+            } while (currentTrialIndex !== startingTrialIndex);
+
+            if (!foundPendingPair) {
+                showScreen('screen-questionnaire');
+                return;
+            }
+
+            let trialState = activePairwiseTrials[currentTrialIndex];
+            let currentPair = trialState.pending_pairs[trialState.pending_pairs.length - 1]; 
+            let shouldFirstImageAppearOnLeft = Math.random() < 0.5;
+
+            activeImagePairComparison = {
+                trialState: trialState,
+                imageLeft: shouldFirstImageAppearOnLeft ? currentPair[0] : currentPair[1],
+                imageRight: shouldFirstImageAppearOnLeft ? currentPair[1] : currentPair[0]
+            };
+
+            visibleRankingScreenIndex = visibleRankingScreenIndex === 1 ? 2 : 1;
+            const targetScreenId = `screen-ranking-${visibleRankingScreenIndex}`;
+
+            document.getElementById(`img-left-${visibleRankingScreenIndex}`).src = activeImagePairComparison.imageLeft.data;
+            document.getElementById(`img-right-${visibleRankingScreenIndex}`).src = activeImagePairComparison.imageRight.data;
+            
+            showScreen(targetScreenId);
+        }
+
+        function processUserRankingSelection(chosenScreenSide) {
+            if (isUserInputTemporarilyDisabled || !activeImagePairComparison) return;
+            isUserInputTemporarilyDisabled = true;
+
+            mostRecentlyPressedDirectionalKey = null;
+            currentlyHeldKeyboardKeys.ArrowLeft = false;
+            currentlyHeldKeyboardKeys.ArrowRight = false;
+            applyKeyboardHoverStylingToImages();
+
+            let comparisonState = activeImagePairComparison;
+            let trialState = comparisonState.trialState;
+            
+            let winningImage = chosenScreenSide === 'left' ? comparisonState.imageLeft : comparisonState.imageRight;
+            let losingImage = chosenScreenSide === 'left' ? comparisonState.imageRight : comparisonState.imageLeft;
+
+            trialState.frequency_matrix[winningImage.id][losingImage.id] += 1;
+            trialState.pending_pairs.pop();
+
+            completedPairs++;
+            updateOverallProgressVisuals();
+            
+            currentTrialIndex = (currentTrialIndex + 1) % activePairwiseTrials.length;
+            prepareNextImagePairComparison();
+        }
+
+        function submitDataAndQuestionnaire() {
+            const errorElement = document.getElementById('quest-error');
+            if (errorElement) errorElement.classList.add('d-none');
+
+            const selectedInstructionClarity = document.querySelector('input[name="quest_clear"]:checked')?.value;
+            const selectedDecisionDifficulty = document.querySelector('input[name="quest_diff"]:checked')?.value;
+            const selectedSightImpairment = document.querySelector('input[name="quest_sight_impairment"]:checked')?.value;
+            const selectedEm = document.querySelector('input[name="quest_em"]:checked')?.value;
+            const selectedIp = document.querySelector('input[name="quest_ip"]:checked')?.value;
+
+            if (!selectedInstructionClarity || !selectedDecisionDifficulty || !selectedSightImpairment || !selectedEm || !selectedIp) {
+                if (errorElement) errorElement.classList.remove('d-none');
+                return;
+            }
+
+            document.getElementById('btn-submit-rankings').disabled = true;
+
+            const questionnaireData = {
+                instructions_clarity: parseInt(selectedInstructionClarity),
+                decision_difficulty: parseInt(selectedDecisionDifficulty),
+                sight_impairment: parseInt(selectedSightImpairment) === 1,
+                experience_em: parseInt(selectedEm) === 1,
+                experience_ip: parseInt(selectedIp) === 1,
+                criteria: document.getElementById('quest-crit').value.trim(),
+                notes: document.getElementById('quest-notes').value.trim()
+            };
+
+            finalizeAllTrialsAndSubmit(questionnaireData);
+        }
+
+        function finalizeAllTrialsAndSubmit(questionnaireData) {
+            activeImagePairComparison = null;
+            const payloadData = {};
+
+            activePairwiseTrials.forEach(trialState => {
+                payloadData[trialState.scene_id] = trialState.frequency_matrix;
+            });
+
+            const endTime = Date.now();
+            
+            if (document.hidden && lastVisibilityChangeTimestamp !== null && trialStartTime !== null)
+                timeTrialUnfocused += (endTime - lastVisibilityChangeTimestamp);
+
+            const finalSubmissionPayload = {
+                variant: currentVariant,
+                mobile: isMobileUser,
+                time_app: endTime - appStartTime,
+                time_trial: endTime - trialStartTime,
+                time_trial_unfocused: timeTrialUnfocused,
+                frequency_matrix: payloadData,
+                questionnaire: questionnaireData
+            };
+
+            transmitFinalRankingsToServer(finalSubmissionPayload);
+        }
+
+        async function transmitFinalRankingsToServer(finalSubmissionPayload) {
+            try {
+                const serverResponse = await fetchWithRetry(`${API_BASE}/submit?key=${currentApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalSubmissionPayload)
+                });
+                
+                const responseJsonPayload = await serverResponse.json();
+                
+                if (responseJsonPayload.status === 'success') {
+                    shouldWarnOnUnload = false;
+                    localStorage.setItem('trial_completed_locally', 'true');
+                    showScreen('screen-done');
+                } else throw new Error(responseJsonPayload.message);
+                
+            } catch (submissionError) {
+                alert(getText('submit_fail'));
+                document.getElementById('btn-submit-rankings').disabled = false;
+                showScreen('screen-key');
+            }
+        }
+
+        function applyKeyboardHoverStylingToImages() {
+            document.querySelectorAll('.choice-img').forEach(imageElement => imageElement.classList.remove('key-hover'));
+            
+            if (document.getElementById(`screen-tutorial-${visibleTutorialScreenIndex}`)?.classList.contains('active')) {
+                if (mostRecentlyPressedDirectionalKey === 'ArrowLeft') document.getElementById(`tut-img-left-${visibleTutorialScreenIndex}`).classList.add('key-hover');
+                if (mostRecentlyPressedDirectionalKey === 'ArrowRight') document.getElementById(`tut-img-right-${visibleTutorialScreenIndex}`).classList.add('key-hover');
+                return;
+            }
+
+            if (document.getElementById(`screen-ranking-${visibleRankingScreenIndex}`)?.classList.contains('active')) {
+                if (mostRecentlyPressedDirectionalKey === 'ArrowLeft') document.getElementById(`img-left-${visibleRankingScreenIndex}`).classList.add('key-hover');
+                if (mostRecentlyPressedDirectionalKey === 'ArrowRight') document.getElementById(`img-right-${visibleRankingScreenIndex}`).classList.add('key-hover');
+            }
+        }
+
+        document.addEventListener('keydown', (keyboardEvent) => {
+            const isCurrentlyInTutorial = document.getElementById(`screen-tutorial-${visibleTutorialScreenIndex}`)?.classList.contains('active');
+            const isCurrentlyInRankingPhase = document.getElementById(`screen-ranking-${visibleRankingScreenIndex}`)?.classList.contains('active');
+            
+            if (isUserInputTemporarilyDisabled || (!isCurrentlyInTutorial && !isCurrentlyInRankingPhase)) return;
+            if (keyboardEvent.repeat) return;
+
+            if (keyboardEvent.key === 'ArrowLeft' || keyboardEvent.key === 'ArrowRight') {
+                currentlyHeldKeyboardKeys[keyboardEvent.key] = true;
+                mostRecentlyPressedDirectionalKey = keyboardEvent.key; 
+                applyKeyboardHoverStylingToImages();
+            }
+        });
+
+        document.addEventListener('keyup', (keyboardEvent) => {
+            if (keyboardEvent.key === 'ArrowLeft' || keyboardEvent.key === 'ArrowRight') {
+                currentlyHeldKeyboardKeys[keyboardEvent.key] = false;
+
+                if (keyboardEvent.key === mostRecentlyPressedDirectionalKey) {
+                    const oppositeDirectionalKey = keyboardEvent.key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
+                    
+                    if (currentlyHeldKeyboardKeys[oppositeDirectionalKey]) {
+                        mostRecentlyPressedDirectionalKey = oppositeDirectionalKey;
+                        applyKeyboardHoverStylingToImages();
+                    } else {
+                        const chosenScreenSide = keyboardEvent.key === 'ArrowLeft' ? 'left' : 'right';
+                        mostRecentlyPressedDirectionalKey = null;
+                        applyKeyboardHoverStylingToImages();
+                        
+                        if (document.getElementById(`screen-tutorial-${visibleTutorialScreenIndex}`)?.classList.contains('active')) {
+                            handleTutorialInput(chosenScreenSide, 'keyboard');
+                            return;
+                        }
+
+                        if (!isUserInputTemporarilyDisabled && document.getElementById(`screen-ranking-${visibleRankingScreenIndex}`)?.classList.contains('active'))
+                            processUserRankingSelection(chosenScreenSide);
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (trialStartTime === null) return;
+
+            const now = Date.now();
+            if (document.hidden) {
+                lastVisibilityChangeTimestamp = now;
+            } else {
+                if (lastVisibilityChangeTimestamp !== null)
+                    timeTrialUnfocused += (now - lastVisibilityChangeTimestamp);
+                lastVisibilityChangeTimestamp = null;
+            }
+        });
+
+        document.addEventListener('contextmenu', (event) => {
+            if (event.target instanceof HTMLImageElement && (event.target.classList.contains('choice-img') || event.target.classList.contains('flag-icon')))
+                event.preventDefault();
+        });
+
+        document.getElementById('api-key-input').addEventListener('keypress', function (keyboardEvent) {
+            if (keyboardEvent.key === 'Enter') handleKeySubmit();
+        });
+
+        document.getElementById('screen-questionnaire').addEventListener('input', () => {
+            document.getElementById('quest-error').classList.add('d-none');
+        });
+
+        window.addEventListener('beforeunload', (event) => {
+            if (!shouldWarnOnUnload) return;
+            event.preventDefault();
+            event.returnValue = '';
+        });
+
+        setLanguage(currentLang);
+
+        if (localStorage.getItem('trial_completed_locally') === 'true') {
+            showScreen('screen-done');
+        } else {
+            showScreen('screen-key');
+            const urlKey = new URLSearchParams(window.location.search).get('key');
+            if (urlKey)
+                document.getElementById('api-key-input').value = urlKey;
+        }
+    </script>
+</body>
+</html>
